@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Tracker Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .alert {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+        
+        .toggle {
+            text-align: center;
+            margin-top: 15px;
+            color: #667eea;
+            cursor: pointer;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 8px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tabs button {
+            flex: 1;
+            margin: 0;
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .nav-tabs button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .video-item, .article-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .video-item:hover, .article-item:hover {
+            transform: translateX(5px);
+            background: #667eea20;
+        }
+        
+        .referral-code {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            letter-spacing: 2px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            margin-top: 20px;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Card -->
+        <div id="loginCard" class="card">
+            <h2>🔐 Login to Dashboard</h2>
+            <div id="loginAlert" class="alert"></div>
+            <input type="email" id="email" placeholder="Email address" autocomplete="off">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="handleLogin()">Login</button>
+            <div class="toggle" onclick="showRegister()">Don't have an account? Register here</div>
+        </div>
+        
+        <!-- Register Card -->
+        <div id="registerCard" class="card" style="display:none">
+            <h2>📝 Create Account</h2>
+            <div id="registerAlert" class="alert"></div>
+            <input type="text" id="fullName" placeholder="Full Name">
+            <input type="email" id="regEmail" placeholder="Email address">
+            <input type="password" id="regPassword" placeholder="Password">
+            <input type="text" id="referralCode" placeholder="Referral Code (Optional)">
+            <button onclick="handleRegister()">Register</button>
+            <div class="toggle" onclick="showLogin()">Back to Login</div>
+        </div>
+        
+        <!-- Dashboard Card -->
+        <div id="dashboardCard" class="card" style="display:none">
+            <h2>Welcome, <span id="userName"></span>! 👋</h2>
+            
+            <div class="nav-tabs">
+                <button onclick="showSection('home')" id="btnHome" class="active">🏠 Home</button>
+                <button onclick="showSection('videos')" id="btnVideos">🎬 Videos</button>
+                <button onclick="showSection('articles')" id="btnArticles">📚 Articles</button>
+                <button onclick="showSection('referrals')" id="btnReferrals">🤝 Refer</button>
+                <button onclick="showSection('security')" id="btnSecurity">🛡️ Security</button>
+            </div>
+            
+            <!-- Home Section -->
+            <div id="homeSection" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div>Total Logins</div>
+                        <div class="stat-value" id="totalLogins">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div>Referrals</div>
+                        <div class="stat-value" id="totalReferrals">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div>Last IP</div>
+                        <div class="stat-value" id="lastIP" style="font-size: 16px;">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Videos Section -->
+            <div id="videosSection" class="section">
+                <h3>🎬 Featured Videos</h3>
+                <div id="videosList"></div>
+            </div>
+            
+            <!-- Articles Section -->
+            <div id="articlesSection" class="section">
+                <h3>📚 Latest Articles</h3>
+                <div id="articlesList"></div>
+            </div>
+            
+            <!-- Referrals Section -->
+            <div id="referralsSection" class="section">
+                <h3>🤝 Refer Friends</h3>
+                <p>Share your unique code with friends:</p>
+                <div class="referral-code" id="referralCode"></div>
+                <button onclick="copyReferralCode()">📋 Copy Referral Code</button>
+            </div>
+            
+            <!-- Security Section -->
+            <div id="securitySection" class="section">
+                <h3>🛡️ IP Login History</h3>
+                <div id="ipLogsList"></div>
+            </div>
+            
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== CONFIGURATION ====================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhFBFhTHlS67viYpnDlAGRqIMgXcilJnSMVWVEuOAX3fHO7kXzp00TwnEsQ-ulFmU5/exec';
+        
+        let currentUser = null;
+        
+        // ==================== JSONP API CALL ====================
+        function callAPI(action, params, callback) {
+            const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+            
+            let url = `${SCRIPT_URL}?action=${action}&callback=${callbackName}`;
+            for (let key in params) {
+                url += `&${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`;
+            }
+            
+            // Set timeout for the request
+            const timeout = setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    callback({ success: false, error: 'Request timeout' });
+                }
+            }, 30000);
+            
+            window[callbackName] = function(data) {
+                clearTimeout(timeout);
+                delete window[callbackName];
+                callback(data);
+            };
+            
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = function() {
+                clearTimeout(timeout);
+                delete window[callbackName];
+                callback({ success: false, error: 'Network error - please check your connection' });
+            };
+            
+            document.body.appendChild(script);
+        }
+        
+        // ==================== AUTHENTICATION ====================
+        function handleLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showAlert('loginAlert', 'Please enter email and password', 'error');
+                return;
+            }
+            
+            showAlert('loginAlert', 'Logging in...', 'success');
+            
+            callAPI('login', {
+                email: email,
+                password: password,
+                userAgent: navigator.userAgent
+            }, function(response) {
+                console.log("Login response:", response);
+                if (response && response.success) {
+                    currentUser = response.user;
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    localStorage.setItem('stats', JSON.stringify(response.stats));
+                    showDashboard();
+                    loadDashboardData();
+                } else {
+                    const errorMsg = response?.error || 'Login failed. Please try again.';
+                    showAlert('loginAlert', errorMsg, 'error');
+                }
+            });
+        }
+        
+        function handleRegister() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const referralCode = document.getElementById('referralCode').value.trim();
+            
+            if (!fullName || !email || !password) {
+                showAlert('registerAlert', 'Please fill all fields', 'error');
+                return;
+            }
+            
+            showAlert('registerAlert', 'Creating account...', 'success');
+            
+            callAPI('register', {
+                fullName: fullName,
+                email: email,
+                password: password,
+                referralCode: referralCode,
+                userAgent: navigator.userAgent
+            }, function(response) {
+                if (response && response.success) {
+                    showAlert('registerAlert', 'Account created! Please login.', 'success');
+                    setTimeout(() => showLogin(), 2000);
+                } else {
+                    const errorMsg = response?.error || 'Registration failed';
+                    showAlert('registerAlert', errorMsg, 'error');
+                }
+            });
+        }
+        
+        // ==================== DASHBOARD FUNCTIONS ====================
+        function showDashboard() {
+            document.getElementById('loginCard').style.display = 'none';
+            document.getElementById('registerCard').style.display = 'none';
+            document.getElementById('dashboardCard').style.display = 'block';
+            
+            document.getElementById('userName').innerText = currentUser.fullName;
+            document.getElementById('referralCode').innerText = currentUser.referralCode;
+            
+            const stats = JSON.parse(localStorage.getItem('stats'));
+            document.getElementById('totalLogins').innerText = stats.totalLogins;
+            document.getElementById('totalReferrals').innerText = stats.totalReferrals;
+            document.getElementById('lastIP').innerText = stats.lastIP;
+        }
+        
+        function loadDashboardData() {
+            loadVideos();
+            loadArticles();
+            loadIPLogs();
+        }
+        
+        function loadVideos() {
+            callAPI('getVideos', {}, function(videos) {
+                const container = document.getElementById('videosList');
+                if (!videos || videos.length === 0) {
+                    container.innerHTML = '<p>No videos available.</p>';
+                } else {
+                    container.innerHTML = videos.map(v => `
+                        <div class="video-item" onclick="window.open('${v.url}', '_blank')">
+                            <strong>🎬 ${escapeHtml(v.title)}</strong>
+                        </div>
+                    `).join('');
+                }
+            });
+        }
+        
+        function loadArticles() {
+            callAPI('getArticles', {}, function(articles) {
+                const container = document.getElementById('articlesList');
+                if (!articles || articles.length === 0) {
+                    container.innerHTML = '<p>No articles available.</p>';
+                } else {
+                    container.innerHTML = articles.map(a => `
+                        <div class="article-item" onclick="window.open('${a.url}', '_blank')">
+                            <strong>📖 ${escapeHtml(a.title)}</strong>
+                            <p style="font-size: 12px; margin-top: 5px; color: #666;">${escapeHtml(a.content.substring(0, 100))}...</p>
+                        </div>
+                    `).join('');
+                }
+            });
+        }
+        
+        function loadIPLogs() {
+            if (!currentUser) return;
+            
+            callAPI('getUserIPLogs', { email: currentUser.email }, function(logs) {
+                const container = document.getElementById('ipLogsList');
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = '<p>No login records found.</p>';
+                } else {
+                    container.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr><th>IP Address</th><th>Location</th><th>Login Time</th></tr>
+                            </thead>
+                            <tbody>
+                                ${logs.map(log => `
+                                    <tr>
+                                        <td><code>${escapeHtml(log.ipAddress)}</code></td>
+                                        <td>${escapeHtml(log.location)}</td>
+                                        <td>${new Date(log.loginTime).toLocaleString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            });
+        }
+        
+        // ==================== UI FUNCTIONS ====================
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`${section}Section`).classList.add('active');
+            
+            const buttons = ['Home', 'Videos', 'Articles', 'Referrals', 'Security'];
+            buttons.forEach(btn => {
+                const btnElement = document.getElementById(`btn${btn}`);
+                if (btnElement) btnElement.classList.remove('active');
+            });
+            
+            const activeBtn = document.getElementById(`btn${section.charAt(0).toUpperCase() + section.slice(1)}`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+        
+        function showRegister() {
+            document.getElementById('loginCard').style.display = 'none';
+            document.getElementById('registerCard').style.display = 'block';
+        }
+        
+        function showLogin() {
+            document.getElementById('registerCard').style.display = 'none';
+            document.getElementById('loginCard').style.display = 'block';
+        }
+        
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+        
+        function copyReferralCode() {
+            const code = document.getElementById('referralCode').innerText;
+            navigator.clipboard.writeText(code);
+            alert('Referral code copied to clipboard!');
+        }
+        
+        function showAlert(alertId, message, type) {
+            const alert = document.getElementById(alertId);
+            alert.className = `alert ${type}`;
+            alert.innerHTML = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        // Check for saved session
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            showDashboard();
+            loadDashboardData();
+        }
+        
+        // Test API on load
+        console.log("Testing API connection...");
+        callAPI('test', {}, function(response) {
+            console.log("API Test response:", response);
+            if (response && response.success) {
+                console.log("✅ API is working!");
+                // Initialize data after confirming API works
+                callAPI('initializeData', {}, function(initResponse) {
+                    console.log("Initialize response:", initResponse);
+                });
+            } else {
+                console.error("❌ API test failed:", response);
+            }
+        });
+    </script>
+</body>
+</html>
